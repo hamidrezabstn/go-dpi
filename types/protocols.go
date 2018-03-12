@@ -18,5 +18,6 @@ const (
 	NetBIOS Protocol = "NetBIOS"
 	JABBER  Protocol = "JABBER"
 	MQTT    Protocol = "MQTT"
+	Telegram Protocol = "Telegram"
 	Unknown Protocol = ""
 )

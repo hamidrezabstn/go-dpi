@@ -21,7 +21,7 @@ type WrapperModule struct {
 type Wrapper interface {
 	InitializeWrapper() int
 	DestroyWrapper() error
-	ClassifyFlow(*types.Flow) (types.Protocol, error)
+	ClassifyFlow(*types.Flow) ([]types.Protocol, error)
 	GetWrapperName() types.ClassificationSource
 }
 
@@ -48,7 +48,7 @@ func NewWrapperModule() *WrapperModule {
 	module := &WrapperModule{}
 	module.activeWrappers = make([]Wrapper, 0)
 	module.wrapperList = []Wrapper{
-		NewLPIWrapper(),
+		//NewLPIWrapper(),
 		NewNDPIWrapper(),
 	}
 	return module
@@ -89,8 +89,14 @@ func (module *WrapperModule) Destroy() error {
 // Undefined protocol.
 func (module *WrapperModule) ClassifyFlow(flow *types.Flow) (result types.ClassificationResult) {
 	for _, wrapper := range module.activeWrappers {
-		if proto, err := wrapper.ClassifyFlow(flow); proto != types.Unknown && err == nil {
-			result.Protocol = proto
+		if proto, err := wrapper.ClassifyFlow(flow); proto[0] != types.Unknown && err == nil {			
+			//check for app-protocol existance
+			if proto[1] != types.Unknown{
+				result.Protocol = proto[0]+"."+proto[1]
+			}else{
+				result.Protocol = proto[0]
+			}
+
 			result.Source = wrapper.GetWrapperName()
 			flow.SetClassificationResult(result.Protocol, result.Source)
 			return
@@ -105,7 +111,13 @@ func (module *WrapperModule) ClassifyFlowAll(flow *types.Flow) (results []types.
 	for _, wrapper := range module.activeWrappers {
 		if proto, err := wrapper.ClassifyFlow(flow); err == nil {
 			var result types.ClassificationResult
-			result.Protocol = proto
+			//check for app-protocol existance
+			if proto[1] != types.Unknown{
+				result.Protocol = proto[0]+"."+proto[1]
+			}else{
+				result.Protocol = proto[0]
+			}
+						
 			result.Source = wrapper.GetWrapperName()
 			flow.SetClassificationResult(result.Protocol, result.Source)
 			results = append(results, result)
