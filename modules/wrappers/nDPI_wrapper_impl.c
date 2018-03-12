@@ -182,12 +182,12 @@ static struct ndpi_flow *get_ndpi_flow(const struct pcap_pkthdr *header,
 }
 
 
-static int packet_processing(const u_int64_t time, const struct pcap_pkthdr *header,
+static u_int16_t *packet_processing(const u_int64_t time, const struct pcap_pkthdr *header,
               const struct ndpi_iphdr *iph, u_int16_t ipsize, u_int16_t rawsize, struct ndpi_flow *flow)
 {
   struct ndpi_id_struct *src, *dst;
   struct ndpi_flow_struct *ndpi_flow = NULL;
-  u_int16_t protocol = 0;
+  static u_int16_t protocol[2] = {0,0};
   u_int16_t frag_off = ntohs(iph->frag_off);
 
   if (flow != NULL) {
@@ -195,22 +195,28 @@ static int packet_processing(const u_int64_t time, const struct pcap_pkthdr *hea
     flow->packets++, flow->bytes += rawsize;
     src = flow->src_id, dst = flow->dst_id;
   } else {
-    return -ERR_NO_FLOW;
+    protocol[0] = -ERR_NO_FLOW;
+    return protocol;
   }
 
-  if(flow->detection_completed) return flow->detected_protocol;
+  if(flow->detection_completed){
+     protocol[0] =flow->detected_protocol;
+     return protocol;
+  }
 
   // only handle unfragmented packets
   if ((frag_off & 0x3FFF) == 0) {
     // here the actual detection is performed
     ndpi_protocol detected = ndpi_detection_process_packet(ndpi_struct, ndpi_flow, (uint8_t *) iph, ipsize, time, src, dst);
-    protocol = detected.master_protocol;
+    protocol[0] = detected.master_protocol;
+    protocol[1] = detected.app_protocol;
+    //printf("master: %d- app : %d\n",protocol[0],protocol[1]);
   } else {
     static u_int8_t frag_warning_used = 0;
-
-    return -ERR_FRAGMENTED_PACKET;
+    protocol[0] =-ERR_FRAGMENTED_PACKET;
+    return protocol;     
   }
-  flow->detected_protocol = protocol;
+  flow->detected_protocol = protocol[0];
 
   if((flow->detected_protocol != NDPI_PROTOCOL_UNKNOWN)
      || (iph->protocol == IPPROTO_UDP)
@@ -219,12 +225,12 @@ static int packet_processing(const u_int64_t time, const struct pcap_pkthdr *hea
 
     free_ndpi_flow(flow);
   }
-  return flow->detected_protocol;
+  return protocol;
 }
 
 
 // process a new packet
-extern int ndpiPacketProcess(const struct pcap_pkthdr *header, const u_char *packet, void *flow)
+extern u_int16_t *ndpiPacketProcess(const struct pcap_pkthdr *header, const u_char *packet, void *flow)
 {
   const struct ndpi_ethhdr *ethernet = (struct ndpi_ethhdr *) packet;
   struct ndpi_iphdr *iph = (struct ndpi_iphdr *) &packet[sizeof(struct ndpi_ethhdr)];
@@ -242,7 +248,9 @@ extern int ndpiPacketProcess(const struct pcap_pkthdr *header, const u_char *pac
     u_int16_t frag_off = ntohs(iph->frag_off);
 
     if (iph->version != 4) {
-      return -ERR_IPV6_NOT_SUPPORTED;
+       static u_int16_t protocol[2] = {0,0};
+       protocol[0] = -ERR_IPV6_NOT_SUPPORTED;
+       return protocol;      
     }
 
     ip_offset = sizeof(struct ndpi_ethhdr);
