@@ -6,8 +6,8 @@ RUN go get github.com/Masterminds/glide
 RUN git clone --branch 2.0-stable https://github.com/ntop/nDPI/ /tmp/nDPI
 RUN cd /tmp/nDPI && ./autogen.sh && ./configure && make && make install && cd -
 
-RUN mkdir -p $GOPATH/src/github.com/mushorg/go-dpi
-WORKDIR $GOPATH/src/github.com/mushorg/go-dpi
+RUN mkdir -p $GOPATH/src/github.com/hamidrezabstn/go-dpi
+WORKDIR $GOPATH/src/github.com/hamidrezabstn/go-dpi
 ADD . .
 RUN glide install && \
     glide update && \

@@ -1,7 +1,7 @@
-[![Build Status](https://travis-ci.org/mushorg/go-dpi.svg?branch=master)](https://travis-ci.org/mushorg/go-dpi)
-[![Coverage Status](https://coveralls.io/repos/github/mushorg/go-dpi/badge.svg?branch=master)](https://coveralls.io/github/mushorg/go-dpi?branch=master)
-[![](https://godoc.org/github.com/mushorg/go-dpi?status.svg)](https://godoc.org/github.com/mushorg/go-dpi)
-[![Go Report Card](https://goreportcard.com/badge/github.com/mushorg/go-dpi)](https://goreportcard.com/report/github.com/mushorg/go-dpi)
+[![Build Status](https://travis-ci.org/hamidrezabstn/go-dpi.svg?branch=master)](https://travis-ci.org/hamidrezabstn/go-dpi)
+[![Coverage Status](https://coveralls.io/repos/github/hamidrezabstn/go-dpi/badge.svg?branch=master)](https://coveralls.io/github/hamidrezabstn/go-dpi?branch=master)
+[![](https://godoc.org/github.com/hamidrezabstn/go-dpi?status.svg)](https://godoc.org/github.com/hamidrezabstn/go-dpi)
+[![Go Report Card](https://goreportcard.com/badge/github.com/hamidrezabstn/go-dpi)](https://goreportcard.com/report/github.com/hamidrezabstn/go-dpi)
 
 # go-dpi
 
@@ -11,9 +11,9 @@ It attempts to classify flows to different protocols regardless of the ports use
 
 It is being developed in the context of the Google Summer of Code 2017 program, under the mentorship of The Honeynet Project.
 
-Please read the project's [Wiki page](https://github.com/mushorg/go-dpi/wiki) for more information.
+Please read the project's [Wiki page](https://github.com/hamidrezabstn/go-dpi/wiki) for more information.
 
-For documentation, please check out the [godoc reference](https://godoc.org/github.com/mushorg/go-dpi).
+For documentation, please check out the [godoc reference](https://godoc.org/github.com/hamidrezabstn/go-dpi).
 
 ## Example usage
 
@@ -56,9 +56,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/mushorg/go-dpi"
-	"github.com/mushorg/go-dpi/types"
-	"github.com/mushorg/go-dpi/utils"
+	"github.com/hamidrezabstn/go-dpi"
+	"github.com/hamidrezabstn/go-dpi/types"
+	"github.com/hamidrezabstn/go-dpi/utils"
 )
 
 func main() {

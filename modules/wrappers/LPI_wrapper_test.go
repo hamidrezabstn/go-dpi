@@ -1,8 +1,8 @@
 package wrappers
 
 import (
-	"github.com/mushorg/go-dpi/types"
-	"github.com/mushorg/go-dpi/utils"
+	"github.com/hamidrezabstn/go-dpi/types"
+	"github.com/hamidrezabstn/go-dpi/utils"
 	"testing"
 )
 
