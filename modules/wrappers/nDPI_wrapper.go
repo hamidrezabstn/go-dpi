@@ -29,6 +29,7 @@ var ndpiCodeToProtocol = map[uint32]types.Protocol{
 	10:  types.NetBIOS, // NDPI_PROTOCOL_NETBIOS
 	67:  types.JABBER,  // NDPI_PROTOCOL_UNENCRYPTED_JABBER
 	222: types.MQTT,    // NDPI_PROTOCOL_MQTT
+	185: types.Telegram,
 }
 
 // NDPIWrapperName is the identification of the nDPI library.
@@ -39,7 +40,7 @@ const NDPIWrapperName = "nDPI"
 type NDPIWrapperProvider struct {
 	ndpiInitialize    func() int32
 	ndpiDestroy       func()
-	ndpiPacketProcess func(gopacket.Packet, unsafe.Pointer) int32
+	ndpiPacketProcess func(gopacket.Packet, unsafe.Pointer) []int32
 	ndpiAllocFlow     func(gopacket.Packet) unsafe.Pointer
 	ndpiFreeFlow      func(unsafe.Pointer)
 }
@@ -72,9 +73,16 @@ func NewNDPIWrapper() *NDPIWrapper {
 		provider: &NDPIWrapperProvider{
 			ndpiInitialize: func() int32 { return int32(C.ndpiInitialize()) },
 			ndpiDestroy:    func() { C.ndpiDestroy() },
-			ndpiPacketProcess: func(packet gopacket.Packet, ndpiFlow unsafe.Pointer) int32 {
+			ndpiPacketProcess: func(packet gopacket.Packet, ndpiFlow unsafe.Pointer) []int32 {
 				pktHeader, pktDataPtr := getPacketNdpiData(packet)
-				return int32(C.ndpiPacketProcess(&pktHeader, pktDataPtr, ndpiFlow))
+				result:= make([]int32,2)
+				var protos *C.u_int16_t = C.ndpiPacketProcess(&pktHeader, pktDataPtr, ndpiFlow)				
+				//convert c array to go slice
+				slice := (*[1 << 30]C.u_int16_t)(unsafe.Pointer(protos))[:2:2]				
+				result[0] = int32(slice[0])
+				result[1] = int32(slice[1])			
+				
+				return result
 			},
 			ndpiAllocFlow: func(packet gopacket.Packet) unsafe.Pointer {
 				pktHeader, pktDataPtr := getPacketNdpiData(packet)
@@ -100,30 +108,39 @@ func (wrapper *NDPIWrapper) DestroyWrapper() error {
 
 // ClassifyFlow classifies a flow using the nDPI library. It returns the
 // detected protocol and any error.
-func (wrapper *NDPIWrapper) ClassifyFlow(flow *types.Flow) (types.Protocol, error) {
+func (wrapper *NDPIWrapper) ClassifyFlow(flow *types.Flow) ([]types.Protocol, error) {
 	packets := flow.GetPackets()
+	result := []types.Protocol{types.Unknown,types.Unknown}
+	var err error
 	if len(packets) > 0 {
 		ndpiFlow := (*wrapper.provider).ndpiAllocFlow(packets[0])
 		defer (*wrapper.provider).ndpiFreeFlow(ndpiFlow)
 		for _, ppacket := range packets {
-			ndpiProto := (*wrapper.provider).ndpiPacketProcess(ppacket, ndpiFlow)
-			if proto, found := ndpiCodeToProtocol[uint32(ndpiProto)]; found {
-				return proto, nil
-			} else if ndpiProto < 0 {
-				switch ndpiProto {
+			ndpiProto := (*wrapper.provider).ndpiPacketProcess(ppacket, ndpiFlow)			
+			for i,dproto:= range ndpiProto{
+			if proto, found := ndpiCodeToProtocol[uint32(dproto)]; found {
+				//log.Println(proto)
+				result[i]= proto
+			} else if dproto < 0 {
+				switch dproto {
 				case -10:
-					return types.Unknown, errors.New("nDPI wrapper does not support IPv6")
+					result[i]= types.Unknown
+					err = errors.New("nDPI wrapper does not support IPv6")
 				case -11:
-					return types.Unknown, errors.New("Received fragmented packet")
+					result[i]= types.Unknown
+					err = errors.New("Received fragmented packet")
 				case -12:
-					return types.Unknown, errors.New("Error creating nDPI flow")
+					result[i]= types.Unknown
+					err = errors.New("Error creating nDPI flow")
 				default:
-					return types.Unknown, errors.New("nDPI unknown error")
+					result[i]= types.Unknown
+					err = errors.New("nDPI unknown error")
 				}
 			}
 		}
 	}
-	return types.Unknown, nil
+	}
+	return result,err
 }
 
 // GetWrapperName returns the name of the wrapper, in order to identify which
