@@ -6,6 +6,7 @@ import (
 	"github.com/hamidrezabstn/go-dpi/types"
 	"github.com/pkg/errors"
 	"strconv"
+
 )
 
 // WrapperModule is the module that contains wrappers for other protocol
@@ -89,14 +90,19 @@ func (module *WrapperModule) Destroy() error {
 // Undefined protocol.
 func (module *WrapperModule) ClassifyFlow(flow *types.Flow) (result types.ClassificationResult) {
 	for _, wrapper := range module.activeWrappers {
-		if proto, err := wrapper.ClassifyFlow(flow); proto[0] != types.Unknown && err == nil {			
+		if proto, err := wrapper.ClassifyFlow(flow);err == nil {			
 			//check for app-protocol existance
-			if proto[1] != types.Unknown{
-				result.Protocol = proto[0]+"."+proto[1]
-			}else{
+			result.Protocol = types.Unknown
+			if proto[0] != types.Unknown {
 				result.Protocol = proto[0]
 			}
-
+			if proto[1] != types.Unknown{
+				var delimeter types.Protocol
+				if proto[0] != types.Unknown{
+					delimeter = "."
+				}
+				result.Protocol += delimeter+proto[1]
+			}
 			result.Source = wrapper.GetWrapperName()
 			flow.SetClassificationResult(result.Protocol, result.Source)
 			return
