@@ -10,6 +10,7 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
 	"github.com/hamidrezabstn/go-dpi"
+	"github.com/hamidrezabstn/go-dpi/modules/wrappers"
 	"github.com/hamidrezabstn/go-dpi/types"
 	"github.com/hamidrezabstn/go-dpi/utils"
 )
@@ -43,6 +44,14 @@ func main() {
 		fmt.Println("File does not exist:", *filename)
 		return
 	}
+
+	wrapperModule := wrappers.NewWrapperModule()
+	config:= wrappers.WrapperModuleConfig{
+		Wrappers: []wrappers.Wrapper{wrappers.NewNDPIWrapper()},
+	}
+	wrapperModule.ConfigureModule(config)
+	godpi.SetModules([]types.Module{wrapperModule})
+		
 
 	initErrs := godpi.Initialize()
 	if len(initErrs) != 0 {
